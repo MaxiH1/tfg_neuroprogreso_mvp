@@ -141,7 +141,7 @@ st.write(
 )
 
 # Force plot local en modo matplotlib
-shap.initjs()  # aunque estemos usando matplotlib, no molesta
+# shap.initjs()  # aunque estemos usando matplotlib, no molesta
 
 fig, ax = plt.subplots(figsize=(8, 2.5))
 shap.force_plot(
