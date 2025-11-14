@@ -143,15 +143,15 @@ st.write(
 # Force plot local en modo matplotlib
 # shap.initjs()  # aunque estemos usando matplotlib, no molesta
 
-fig, ax = plt.subplots(figsize=(8, 2.5))
-shap.force_plot(
-    explainer.expected_value,
-    shap_values_case,
-    X_case,
-    matplotlib=True,
-    show=False
-)
-st.pyplot(fig)
+#fig, ax = plt.subplots(figsize=(8, 2.5))
+#shap.force_plot(
+#    explainer.expected_value,
+#    shap_values_case,
+#    X_case,
+#    matplotlib=True,
+#    show=False
+#)
+#st.pyplot(fig)
 
 # -------------------------------------------------------------------
 # Recomendación personalizada según rol
