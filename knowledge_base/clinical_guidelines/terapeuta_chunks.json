@@ -1,0 +1,42 @@
+[
+  {
+    "id": "terapeuta_coordinacion_01",
+    "rol": "terapeuta",
+    "tema": "coordinacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "La coordinación entre familia, escuela y equipo terapéutico permite que los apoyos sean consistentes en todos los entornos. Los acuerdos simples suelen ser más sostenibles."
+  },
+  {
+    "id": "terapeuta_coordinacion_02",
+    "rol": "terapeuta",
+    "tema": "coordinacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Pedir a la familia o docentes un registro breve de situaciones exitosas o de mayor demanda ayuda a identificar patrones de comportamiento para ajustar intervenciones."
+  },
+  {
+    "id": "terapeuta_seguimiento_01",
+    "rol": "terapeuta",
+    "tema": "seguimiento",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Cuando se observan conductas repetitivas frecuentes, documentar su frecuencia, duración y contexto permite tomar decisiones más informadas durante las sesiones."
+  },
+  {
+    "id": "terapeuta_estrategias_01",
+    "rol": "terapeuta",
+    "tema": "estrategias",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Modelar estrategias de anticipación y elección guiada durante la sesión permite que la familia pueda aplicarlas luego en situaciones cotidianas."
+  },
+  {
+    "id": "terapeuta_entorno_01",
+    "rol": "terapeuta",
+    "tema": "entorno",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Observar cómo reacciona el niño a distintos niveles de estímulos sensoriales en sesión puede orientar recomendaciones simples para el hogar y la escuela."
+  }
+]

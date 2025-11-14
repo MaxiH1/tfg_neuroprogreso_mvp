@@ -1,0 +1,14 @@
+pandas
+numpy
+scikit-learn
+xgboost
+shap
+matplotlib
+joblib
+streamlit
+
+# Para la capa RAG (los agregaremos cuando lleguemos a esa etapa)
+	# sentence-transformers
+	# qdrant-client
+	# openai
+	# tiktoken

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "docente_transiciones_01",
+    "rol": "docente",
+    "tema": "transiciones",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Las transiciones entre actividades pueden ser momentos de estrés. Anticiparlas con una señal repetida y predecible ayuda a que el niño pueda prepararse."
+  },
+  {
+    "id": "docente_transiciones_02",
+    "rol": "docente",
+    "tema": "transiciones",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Mostrar un esquema visual simple del siguiente paso académico puede reducir la resistencia ante el cambio de actividad."
+  },
+  {
+    "id": "docente_entorno_01",
+    "rol": "docente",
+    "tema": "entorno_aula",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Reducir estímulos visuales y sonoros cerca del espacio de trabajo del niño puede favorecer su nivel de atención durante las actividades más demandantes."
+  },
+  {
+    "id": "docente_entorno_02",
+    "rol": "docente",
+    "tema": "entorno_aula",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "La ubicación del pupitre puede influir en la participación. Un lugar con menos tránsito de alumnos puede proporcionar mayor estabilidad."
+  },
+  {
+    "id": "docente_comunicacion_01",
+    "rol": "docente",
+    "tema": "comunicacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Las consignas breves, acompañadas de ejemplos visuales o demostraciones, facilitan la comprensión y reducen la frustración durante el trabajo académico."
+  },
+  {
+    "id": "docente_planificacion_01",
+    "rol": "docente",
+    "tema": "planificacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Planificar actividades con tiempos previsibles y pasos claros permite que el niño pueda anticipar lo que sucederá y organizar mejor sus respuestas."
+  }
+]

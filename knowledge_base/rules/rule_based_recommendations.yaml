@@ -1,0 +1,85 @@
+perfiles:
+  apoyo_leve:
+    descripcion: "El modelo estima un nivel bajo de apoyo adicional."
+  apoyo_moderado:
+    descripcion: "El modelo estima una necesidad moderada de apoyos."
+  apoyo_focalizado:
+    descripcion: "El modelo sugiere ajustar apoyos en áreas específicas."
+  apoyo_intensivo:
+    descripcion: "El modelo sugiere una necesidad importante de apoyos adicionales."
+
+reglas:
+  # ---------------- FAMILIA ----------------
+  - nombre: "familia_apoyo_focalizado_rutinas"
+    perfil: "apoyo_focalizado"
+    rol: "familia"
+    condicion:
+      variable_clave: "RRB"
+      nivel: "alto"
+      tema: "rutinas"
+    intro_base: >
+      Según los datos recientes, podría ser útil ajustar algunas rutinas en casa.
+    recomendacion_base: >
+      Mantener horarios similares para las actividades importantes y avisar con anticipación cualquier cambio, usando siempre las mismas palabras o apoyos visuales.
+
+  - nombre: "familia_apoyo_moderado_comunicacion"
+    perfil: "apoyo_moderado"
+    rol: "familia"
+    condicion:
+      variable_clave: "affect_total"
+      nivel: "medio"
+      tema: "comunicacion"
+    intro_base: >
+      La comunicación cotidiana puede ser una herramienta clave para acompañar mejor al niño.
+    recomendacion_base: >
+      Usar frases cortas, claras y siempre en el mismo orden, apoyándolas cuando sea posible con gestos o imágenes que el niño ya conozca.
+
+  # ---------------- DOCENTE ----------------
+  - nombre: "docente_apoyo_focalizado_transiciones"
+    perfil: "apoyo_focalizado"
+    rol: "docente"
+    condicion:
+      variable_clave: "RRB"
+      nivel: "medio"
+      tema: "transiciones"
+    intro_base: >
+      En el aula, puede ayudar organizar mejor las transiciones entre actividades.
+    recomendacion_base: >
+      Avisar unos minutos antes de cada cambio de tarea y mostrar un esquema visual simple del paso siguiente para facilitar la transición.
+
+  - nombre: "docente_apoyo_moderado_entorno"
+    perfil: "apoyo_moderado"
+    rol: "docente"
+    condicion:
+      variable_clave: "overall_total"
+      nivel: "medio"
+      tema: "entorno_aula"
+    intro_base: >
+      Ajustar algunos elementos del entorno del aula puede favorecer la participación del niño.
+    recomendacion_base: >
+      Ubicar al niño en un sector con menos ruido y movimiento en los momentos que requieren mayor concentración.
+
+  # ---------------- TERAPEUTA ----------------
+  - nombre: "terapeuta_apoyo_focalizado_coordinacion"
+    perfil: "apoyo_focalizado"
+    rol: "terapeuta"
+    condicion:
+      variable_clave: "overall_total"
+      nivel: "medio"
+      tema: "coordinacion"
+    intro_base: >
+      Los datos sugieren revisar cómo se están coordinando las estrategias entre hogar y escuela.
+    recomendacion_base: >
+      Proponer a familia y escuela un registro breve y regular de situaciones que funcionan bien y de aquellas que generan más dificultad, para ajustar el plan de intervención.
+
+  - nombre: "terapeuta_apoyo_intensivo_seguimiento"
+    perfil: "apoyo_intensivo"
+    rol: "terapeuta"
+    condicion:
+      variable_clave: "RRB"
+      nivel: "alto"
+      tema: "seguimiento"
+    intro_base: >
+      El modelo indica que podría ser necesario un seguimiento más cercano de las conductas repetitivas.
+    recomendacion_base: >
+      Registrar junto a la familia la frecuencia y el contexto de las conductas repetitivas durante algunos días, para identificar patrones y decidir ajustes en la intervención.

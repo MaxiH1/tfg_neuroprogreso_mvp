@@ -1,0 +1,58 @@
+[
+  {
+    "id": "familia_rutinas_01",
+    "rol": "familia",
+    "tema": "rutinas",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Mantener rutinas predecibles ayuda a reducir la incertidumbre. Comenzar y finalizar las actividades importantes a horarios similares facilita que el niño sepa qué esperar."
+  },
+  {
+    "id": "familia_rutinas_02",
+    "rol": "familia",
+    "tema": "rutinas",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Cuando se anticipa un cambio inusual en la rutina diaria, avisar con antelación y explicar de manera simple contribuye a que el niño pueda prepararse emocionalmente."
+  },
+  {
+    "id": "familia_rutinas_03",
+    "rol": "familia",
+    "tema": "rutinas",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Los apoyos visuales como calendarios simples o secuencias de tres pasos pueden ayudar a comprender qué viene después, especialmente en momentos del día que generan tensión."
+  },
+  {
+    "id": "familia_comunicacion_01",
+    "rol": "familia",
+    "tema": "comunicacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Usar frases breves, directas y consistentes ayuda a que el niño entienda mejor. Acompañar las palabras con gestos o imágenes conocidas refuerza el mensaje."
+  },
+  {
+    "id": "familia_comunicacion_02",
+    "rol": "familia",
+    "tema": "comunicacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Evitar dar muchas instrucciones juntas puede reducir la frustración. Presentar una indicación por vez permite que el niño organice mejor su respuesta."
+  },
+  {
+    "id": "familia_sensorial_01",
+    "rol": "familia",
+    "tema": "sensorial",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Crear un pequeño espacio tranquilo en casa, con menos ruido y menos estímulos, puede ayudar al niño a regularse cuando está sobrecargado."
+  },
+  {
+    "id": "familia_coordinacion_01",
+    "rol": "familia",
+    "tema": "coordinacion",
+    "fuente": "guia_general",
+    "idioma": "es",
+    "texto": "Compartir con la escuela o profesionales un breve resumen de lo que funcionó bien en casa durante la semana facilita que todos trabajen con información consistente."
+  }
+]
