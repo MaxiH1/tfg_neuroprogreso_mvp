@@ -6,6 +6,8 @@ shap
 matplotlib
 joblib
 streamlit
+PyYAML
+
 
 # Para la capa RAG (los agregaremos cuando lleguemos a esa etapa)
 	# sentence-transformers
