@@ -70,7 +70,7 @@ class SimpleRAG:
             self.doc_titles.append(path.stem)
 
         if self.docs:
-            self.vectorizer = TfidfVectorizer(stop_words="spanish")
+            self.vectorizer = TfidfVectorizer()
             self.doc_matrix = self.vectorizer.fit_transform(self.docs)
 
     def has_docs(self) -> bool:
