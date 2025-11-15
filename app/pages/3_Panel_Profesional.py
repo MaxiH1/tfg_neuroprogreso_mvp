@@ -386,8 +386,9 @@ st.caption(
 st.markdown("### 3. Factores más influyentes en la predicción")
 
 st.caption(
-    "Esta sección resume qué variables aportan más a la predicción del modelo para este caso. "
-    "Su lectura está orientada a profesionales con formación clínica o en análisis de datos."
+    "Esta sección resume, en forma cualitativa, qué variables aportan más a la "
+    "predicción del modelo para este caso. Su lectura está orientada a "
+    "profesionales con formación clínica o en análisis de datos."
 )
 
 # Calculamos SHAP para el caso actual
@@ -396,19 +397,28 @@ raw_shap_values_case = explainer.shap_values(X_case)
 def get_1d_shap_vector(shap_vals, n_features: int):
     arr = np.array(shap_vals)
 
+    # Formato (n_features,)
     if arr.ndim == 1 and arr.shape[0] == n_features:
         return arr
+
+    # Formato (1, n_features)
     if arr.ndim == 2 and arr.shape[1] == n_features:
         return arr[0]
+
+    # Multiclase: (n_clases, n_features)
     if arr.ndim == 2 and arr.shape[0] > 1:
         return arr[0]
+
+    # Formato (1, n_clases, n_features), etc.
     if arr.ndim == 3:
         return arr.reshape(-1, n_features)[0]
 
+    # Fallback defensivo
     return arr.reshape(-1)[:n_features]
 
 shap_vector = get_1d_shap_vector(raw_shap_values_case, len(feature_cols))
 
+# Construimos una lista de importancia por variable
 feature_importance = []
 for feature_name, contrib in zip(feature_cols, shap_vector):
     abs_contrib = float(abs(contrib))
@@ -420,25 +430,47 @@ for feature_name, contrib in zip(feature_cols, shap_vector):
         }
     )
 
+# Ordenamos por impacto absoluto (de mayor a menor)
 feature_importance = sorted(
     feature_importance,
     key=lambda x: x["impacto_absoluto"],
     reverse=True,
-)[:5]
-
-st.write("Variables con mayor impacto (ordenadas por contribución absoluta):")
-st.table(
-    {
-        "Variable": [FRIENDLY_FEATURE_NAMES.get(f["variable"], f["variable"]) for f in feature_importance],
-        "Contribución SHAP": [round(f["contribucion"], 3) for f in feature_importance],
-        "Impacto absoluto": [round(f["impacto_absoluto"], 3) for f in feature_importance],
-    }
 )
 
+# Generamos descripciones textuales en orden
+descripciones = []
+for rank, item in enumerate(feature_importance, start=1):
+    nombre_amigable = FRIENDLY_FEATURE_NAMES.get(item["variable"], item["variable"])
+    contrib = item["contribucion"]
+
+    if contrib > 0:
+        direccion = "tiende a empujar la predicción hacia un perfil de **mayor necesidad de apoyo**."
+    elif contrib < 0:
+        direccion = "tiende a empujar la predicción hacia un perfil de **menor necesidad de apoyo**."
+    else:
+        direccion = "no muestra un aporte claro en este caso puntual."
+
+    if rank == 1:
+        intensidad = "influencia principal en este caso."
+    elif rank <= 3:
+        intensidad = "una influencia relevante dentro del conjunto de variables."
+    else:
+        intensidad = "una influencia complementaria, aunque presente en la predicción."
+
+    descripciones.append(
+        f"{rank}. **{nombre_amigable}**: {intensidad} En este caso, {direccion}"
+    )
+
+st.markdown(
+    "Variables ordenadas cualitativamente según su peso en la predicción para este caso:"
+)
+st.markdown("\n".join([f"- {texto}" for texto in descripciones]))
+
 st.caption(
-    "Valores positivos indican que la variable empuja la predicción hacia un perfil de mayor necesidad "
-    "de apoyo; valores negativos, hacia menor necesidad. La magnitud absoluta refleja la relevancia relativa "
-    "en esta predicción puntual."
+    "Las descripciones anteriores sintetizan la dirección del impacto de cada variable "
+    "según el modelo: valores que empujan hacia mayor apoyo sugieren focos de atención "
+    "clínica; los que empujan hacia menor apoyo pueden asociarse a fortalezas relativas "
+    "o áreas mejor compensadas."
 )
 
 # -------------------------------------------------------------------
