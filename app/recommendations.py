@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Optional
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -11,189 +12,250 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 
 # -------------------------------------------------------------------
-# Config: ubicación de la base de conocimiento
+# Configuración de la base de conocimiento
 # -------------------------------------------------------------------
-BASE_DIR = Path(__file__).resolve().parents[1]   # raíz del repo
-KB_DIR = BASE_DIR / "knowledge_base"
 
-# rol interno -> subcarpeta dentro de knowledge_base
-ROLE_DIRS = {
+BASE_KB_DIR = Path("knowledge_base")
+
+# Ojo con los nombres de carpeta que tenés en el proyecto
+ROLE_DIRS: Dict[str, str] = {
     "familia": "family_guidelines",
-    "docente": "docente",        # los usaremos más adelante
-    "terapeuta": "profesional",  # idem
+    "docente": "educational_guidelines",
+    "terapeuta": "clinical_guidelines",
 }
 
 
-# -------------------------------------------------------------------
-# SimpleRetriever: TF-IDF + coseno
-# -------------------------------------------------------------------
-class SimpleRetriever:
-    def __init__(self, base_dir: Path):
-        self.base_dir = Path(base_dir)
+@dataclass
+class RetrievedDoc:
+    title: str
+    text: str
+    score: float
+
+
+class SimpleRAG:
+    """
+    RAG-light: carga documentos .md por rol, arma un TF-IDF simple
+    y devuelve los más parecidos a una consulta de texto.
+    """
+
+    def __init__(self, role: str):
+        self.role = role
         self.docs: List[str] = []
-        self.titles: List[str] = []
+        self.doc_titles: List[str] = []
+        self.vectorizer: Optional[TfidfVectorizer] = None
+        self.doc_matrix = None
+        self._load_docs()
 
-        # Cargamos .md y .txt
-        if self.base_dir.exists():
-            for path in self.base_dir.rglob("*.md"):
-                self.titles.append(path.stem)
-                self.docs.append(path.read_text(encoding="utf-8"))
-            for path in self.base_dir.rglob("*.txt"):
-                self.titles.append(path.stem)
-                self.docs.append(path.read_text(encoding="utf-8"))
+    def _load_docs(self) -> None:
+        subdir = ROLE_DIRS.get(self.role)
+        if not subdir:
+            return
 
-        # Si no hay docs, dejamos el vectorizador vacío
+        kb_dir = BASE_KB_DIR / subdir
+        if not kb_dir.exists():
+            # No hay carpeta para este rol
+            return
+
+        for path in sorted(kb_dir.glob("*.md")):
+            try:
+                text = path.read_text(encoding="utf-8")
+            except Exception:
+                continue
+
+            text = text.strip()
+            if not text:
+                continue
+
+            self.docs.append(text)
+            self.doc_titles.append(path.stem)
+
         if self.docs:
-            self.vectorizer = TfidfVectorizer()
+            self.vectorizer = TfidfVectorizer(stop_words="spanish")
             self.doc_matrix = self.vectorizer.fit_transform(self.docs)
-        else:
-            self.vectorizer = None
-            self.doc_matrix = None
 
-    def retrieve(self, query: str, top_k: int = 3) -> List[Tuple[str, str]]:
-        """Devuelve lista de (título, texto) ordenada por similitud."""
-        if not self.docs or self.vectorizer is None or self.doc_matrix is None:
+    def has_docs(self) -> bool:
+        return bool(self.docs) and self.vectorizer is not None
+
+    def retrieve(self, query: str, top_k: int = 2) -> List[RetrievedDoc]:
+        if not self.has_docs():
             return []
 
         q_vec = self.vectorizer.transform([query])
         sims = cosine_similarity(q_vec, self.doc_matrix)[0]
-        idxs = sims.argsort()[::-1][:top_k]
-        return [(self.titles[i], self.docs[i]) for i in idxs]
 
-
-# Caché simple en memoria para no recalcular TF-IDF todo el tiempo
-_RETRIEVERS: Dict[str, SimpleRetriever | None] = {}
-
-
-def _get_retriever_for_role(rol: str) -> SimpleRetriever | None:
-    """Devuelve un retriever para el rol interno ('familia', 'docente', 'terapeuta')."""
-    if rol not in ROLE_DIRS:
-        return None
-
-    if rol in _RETRIEVERS:
-        return _RETRIEVERS[rol]
-
-    subdir = ROLE_DIRS[rol]
-    base = KB_DIR / subdir
-    if base.exists():
-        _RETRIEVERS[rol] = SimpleRetriever(base)
-    else:
-        _RETRIEVERS[rol] = None
-
-    return _RETRIEVERS[rol]
+        idxs = np.argsort(sims)[::-1][:top_k]
+        results: List[RetrievedDoc] = []
+        for i in idxs:
+            if sims[i] <= 0:
+                continue
+            results.append(
+                RetrievedDoc(
+                    title=self.doc_titles[i],
+                    text=self.docs[i],
+                    score=float(sims[i]),
+                )
+            )
+        return results
 
 
 # -------------------------------------------------------------------
-# Constructores de queries según rol (por ahora, solo familia)
+# Helpers para armar consultas y extraer fragmentos de texto
 # -------------------------------------------------------------------
-def _build_query_familia(prob: float, features_row) -> str:
-    """
-    Armamos una consulta simple en texto para buscar en los documentos de familia.
-    No hace falta que sea perfecta, solo razonable.
-    """
-    partes = ["apoyos en casa", "rutinas", "comunicación con la escuela"]
 
-    # Ajustamos según nivel de riesgo del modelo
+
+def build_query(role: str, prob: float, features_row, shap_values_row=None) -> str:
+    """
+    Construye una consulta simple en texto según rol + probabilidad.
+    No es un prompt para LLM, solo una query para TF-IDF.
+    """
+
+    riesgo = "bajo"
     if prob >= 0.7:
-        partes.append("mayor necesidad de apoyo")
-        partes.append("coordinación con escuela y terapeutas")
+        riesgo = "alto"
     elif prob >= 0.4:
-        partes.append("apoyo moderado")
-        partes.append("seguimiento cercano")
+        riesgo = "moderado"
 
-    # Usamos algunas features para matizar la consulta (best effort)
-    try:
-        rrb_val = float(features_row.get("RRB", 0.0))
-        if rrb_val > 5:
-            partes.append("conductas repetitivas")
-    except Exception:
-        pass
+    if role == "familia":
+        return (
+            f"recomendaciones para familias, riesgo {riesgo}, hábitos de sueño, "
+            f"rutinas en casa, comunicación con escuela"
+        )
+    elif role == "docente":
+        return (
+            f"recomendaciones pedagógicas para docentes, riesgo {riesgo}, "
+            f"participación en clase, ajustes razonables, regulación de conducta, "
+            f"ausencias y seguimiento escolar"
+        )
+    else:  # terapeuta / profesional
+        return (
+            f"orientaciones clínicas para profesionales de la salud, riesgo {riesgo}, "
+            f"priorización de objetivos, coordinación interdisciplinaria, seguimiento"
+        )
 
-    try:
-        aff_val = float(features_row.get("affect_total", 0.0))
-        if aff_val > 15:
-            partes.append("interacción social y comunicación")
-    except Exception:
-        pass
 
-    return " ".join(partes)
+def extract_highlights(text: str, max_sentences: int = 3) -> str:
+    """
+    Extrae las primeras frases o líneas no vacías de un documento .md
+    para usarlas como 'corazón' de la recomendación.
+    """
+    # Cortamos por saltos de línea
+    lines = [l.strip("- •").strip() for l in text.splitlines()]
+    lines = [l for l in lines if l]
+
+    if not lines:
+        return ""
+
+    # Tomamos las primeras 3 líneas/frases informativas
+    highlights = lines[:max_sentences]
+    return " ".join(highlights)
 
 
 # -------------------------------------------------------------------
-# Recomendación para FAMILIA (RAG-light)
+# Reglas base (fallback) por rol – por si no hay docs o similitud baja
 # -------------------------------------------------------------------
-def _recommend_familia(prob: float, features_row, shap_values_row) -> Dict[str, Any]:
-    retriever = _get_retriever_for_role("familia")
-
-    # 1) Si no hay retriever o docs, usamos el fallback clásico
-    if retriever is None:
-        return _fallback_familia(prob)
-
-    query = _build_query_familia(prob, features_row)
-    docs = retriever.retrieve(query, top_k=3)
-
-    if not docs:
-        # Si por alguna razón no se recupera nada, también fallback
-        return _fallback_familia(prob)
-
-    # 2) Tomamos la primera línea de cada documento como “idea clave”
-    bullets: List[str] = []
-    for title, body in docs:
-        first_line = body.strip().splitlines()[0]
-        bullets.append(f"- {first_line}")
-
-    intro = (
-        "Según el perfil de riesgo estimado por el modelo y la información disponible, "
-        "se seleccionaron orientaciones de la biblioteca para familias relacionadas con "
-        "rutinas, organización cotidiana y comunicación con la escuela."
-    )
-
-    recomendacion = (
-        "Podría ser útil considerar las siguientes acciones en el hogar:\n\n"
-        + "\n".join(bullets)
-    )
-
-    disclaimer = (
-        "Esta sugerencia se apoya en materiales de referencia para familias y en la salida del modelo, "
-        "pero siempre debe revisarse y adaptarse junto con los profesionales que acompañan al niño o la niña."
-    )
-
-    return {
-        "intro": intro,
-        "recomendacion": recomendacion,
-        "disclaimer": disclaimer,
-    }
 
 
-def _fallback_familia(prob: float) -> Dict[str, str]:
-    """Versión de respaldo si todavía no hay docs o algo falla."""
-
+def _fallback_for_familia(prob: float) -> Dict[str, str]:
     if prob < 0.33:
         intro = (
-            "Tu hijo/a está atravesando un momento relativamente favorable. "
-            "Mantener las rutinas que están funcionando ayuda a sostener este progreso."
+            "Según los datos recientes, tu hijo/a se encuentra en un momento relativamente estable."
+        )
+        recomendacion = (
+            "Mantené las rutinas que vienen funcionando (sueño, horarios, anticipación de cambios) "
+            "y seguí observando pequeños avances en la vida diaria."
         )
     elif prob < 0.66:
         intro = (
-            "Tu hijo/a podría necesitar un poco más de apoyo en este tiempo. "
-            "Pequeños cambios en casa y una buena comunicación con la escuela pueden marcar diferencia."
+            "Los datos sugieren que tu hijo/a podría necesitar un poco más de apoyo en este tiempo."
+        )
+        recomendacion = (
+            "Puede ayudar reforzar las rutinas de sueño, anticipar cambios en el día y conversar "
+            "con la escuela sobre lo que ven en el aula, buscando acuerdos simples y sostenibles."
         )
     else:
         intro = (
-            "Tu hijo/a está atravesando un momento que requiere un acompañamiento más cercano. "
-            "Resulta útil coordinar acciones entre la familia, la escuela y los profesionales."
+            "Los datos indican que tu hijo/a está atravesando un momento de mayor necesidad de apoyo."
+        )
+        recomendacion = (
+            "Es recomendable acompañarlo/a de cerca, revisar las rutinas en casa y coordinar acciones "
+            "con escuela y profesionales para sostener su bienestar y su participación cotidiana."
         )
 
-    recomendacion = (
-        "Podés observar qué situaciones resultan más difíciles en el día a día, anotar ejemplos concretos "
-        "y compartirlos con la escuela o el equipo terapéutico para pensar estrategias en conjunto."
+    disclaimer = (
+        "Esta sugerencia es orientativa y debe complementarse con el criterio de los profesionales "
+        "que acompañan al niño o niña."
     )
+    return {
+        "intro": intro,
+        "recomendacion": recomendacion,
+        "disclaimer": disclaimer,
+    }
+
+
+def _fallback_for_docente(prob: float) -> Dict[str, str]:
+    if prob < 0.33:
+        intro = (
+            "El modelo sugiere un riesgo pedagógico bajo en este momento."
+        )
+        recomendacion = (
+            "Puede ser útil sostener las estrategias que ya funcionan en el aula, ofrecer consignas "
+            "claras y breves, y reforzar los logros para consolidar la participación del estudiante."
+        )
+    elif prob < 0.66:
+        intro = (
+            "El modelo indica un riesgo pedagógico moderado que merece seguimiento cercano."
+        )
+        recomendacion = (
+            "Se sugiere ajustar la dificultad de las actividades, fragmentar tareas extensas, "
+            "combinar apoyos visuales y verbales, y registrar situaciones que se repiten para "
+            "compartirlas con la familia y el equipo de apoyo."
+        )
+    else:
+        intro = (
+            "El modelo señala un riesgo pedagógico alto en este período."
+        )
+        recomendacion = (
+            "Conviene revisar en equipo los apoyos disponibles en el aula, definir adaptaciones "
+            "prioritarias (tiempos, consignas, apoyos visuales, espacios de regulación) y coordinar "
+            "acuerdos claros con la familia y otros profesionales."
+        )
 
     disclaimer = (
-        "Esta recomendación es orientativa y no reemplaza la evaluación ni las decisiones de los "
-        "profesionales de la salud o de la educación."
+        "Esta sugerencia es orientativa y debe complementarse con el criterio pedagógico y las "
+        "normativas institucionales vigentes."
     )
+    return {
+        "intro": intro,
+        "recomendacion": recomendacion,
+        "disclaimer": disclaimer,
+    }
 
+
+def _fallback_for_terapeuta(prob: float) -> Dict[str, str]:
+    if prob < 0.33:
+        intro = "El perfil actual se alinea con una necesidad de apoyo clínico baja."
+        recomendacion = (
+            "Puede resultar suficiente mantener el plan de intervención vigente, monitoreando "
+            "funcionamiento adaptativo, participación escolar y bienestar familiar."
+        )
+    elif prob < 0.66:
+        intro = "El perfil sugiere una necesidad de apoyo clínico moderada."
+        recomendacion = (
+            "Se recomienda revisar objetivos específicos, ajustar la intensidad de las intervenciones "
+            "y fortalecer canales de comunicación con escuela y familia para detectar cambios tempranos."
+        )
+    else:
+        intro = "El perfil indica una necesidad de apoyo clínico alta."
+        recomendacion = (
+            "Resulta pertinente priorizar objetivos críticos, coordinar acciones interdisciplinarias "
+            "y documentar de manera sistemática la evolución en diferentes contextos (hogar, escuela, "
+            "espacios terapéuticos)."
+        )
+
+    disclaimer = (
+        "Esta sugerencia es un apoyo orientativo para la práctica profesional y no sustituye la "
+        "evaluación clínica ni las guías de práctica basadas en evidencia."
+    )
     return {
         "intro": intro,
         "recomendacion": recomendacion,
@@ -202,78 +264,75 @@ def _fallback_familia(prob: float) -> Dict[str, str]:
 
 
 # -------------------------------------------------------------------
-# Recomendaciones para DOCENTE y TERAPEUTA (por ahora, plantillas)
+# Función principal que usan los paneles
 # -------------------------------------------------------------------
-def _recommend_docente(prob: float, features_row, shap_values_row) -> Dict[str, str]:
-    """
-    De momento dejamos una plantilla “clásica”.
-    Más adelante podemos hacer otro RAG-light con knowledge_base/docente.
-    """
-    intro = (
-        "Según los datos recientes, podría ser útil tener en cuenta apoyos pedagógicos adicionales "
-        "y revisar la organización del aula para este estudiante."
-    )
-
-    recomendacion = (
-        "Observar qué consignas generan mayor dificultad, graduar la complejidad de las tareas y "
-        "acordar con la familia pequeñas metas alcanzables, manteniendo una comunicación regular "
-        "sobre avances y dificultades."
-    )
-
-    disclaimer = (
-        "Esta sugerencia es orientativa y debe complementarse con el criterio docente y las políticas "
-        "institucionales de la escuela."
-    )
-
-    return {
-        "intro": intro,
-        "recomendacion": recomendacion,
-        "disclaimer": disclaimer,
-    }
 
 
-def _recommend_terapeuta(prob: float, features_row, shap_values_row) -> Dict[str, str]:
-    intro = (
-        "A partir del perfil de riesgo estimado por el modelo y las características observadas, "
-        "podría ser pertinente revisar la formulación clínica breve y priorizar objetivos específicos."
-    )
-
-    recomendacion = (
-        "Se sugiere identificar una o dos metas centrales a corto plazo, coordinar con la escuela y la familia "
-        "las estrategias principales, y documentar cambios en funcionamiento adaptativo, sueño y conducta."
-    )
-
-    disclaimer = (
-        "Estas sugerencias son un apoyo orientativo para la práctica profesional y no sustituyen "
-        "la evaluación clínica ni las guías de práctica basadas en evidencia."
-    )
-
-    return {
-        "intro": intro,
-        "recomendacion": recomendacion,
-        "disclaimer": disclaimer,
-    }
-
-
-# -------------------------------------------------------------------
-# API pública usada por los paneles
-# -------------------------------------------------------------------
 def get_recommendation(
     rol: str,
     prob: float,
     features_row,
-    shap_values_row,
-) -> Dict[str, Any]:
+    shap_values_row=None,
+) -> Dict[str, str]:
     """
-    rol: 'familia', 'docente' o 'terapeuta' (profesional).
+    Punto de entrada único desde los paneles.
+    1) Construye una query según rol + prob
+    2) Recupera fragmentos de la base de conocimiento (RAG-light)
+    3) Si no hay docs o similitud baja, usa un fallback basado en reglas
     """
-    rol = (rol or "").lower()
+
+    rag = SimpleRAG(rol)
+    query = build_query(rol, prob, features_row, shap_values_row)
+    retrieved_docs = rag.retrieve(query, top_k=2) if rag.has_docs() else []
+
+    # Fallback base según rol
+    if rol == "familia":
+        base = _fallback_for_familia(prob)
+    elif rol == "docente":
+        base = _fallback_for_docente(prob)
+    else:
+        base = _fallback_for_terapeuta(prob)
+
+    # Si no encontramos docs relevantes, devolvemos solo el fallback
+    if not retrieved_docs:
+        return base
+
+    # Tomamos los mejores documentos y extraemos sus "ideas fuerza"
+    highlights = []
+    for doc in retrieved_docs:
+        h = extract_highlights(doc.text, max_sentences=2)
+        if h:
+            highlights.append(h)
+
+    # Si por algún motivo no pudimos extraer nada, devolvemos el fallback
+    if not highlights:
+        return base
+
+    # Integramos el RAG-light con el texto base
+    joined_highlights = " ".join(highlights)
+
+    # Ajuste de mensaje según rol (solo cambiamos la parte de recomendación)
+    base_intro = base["intro"]
+    base_disclaimer = base["disclaimer"]
 
     if rol == "familia":
-        return _recommend_familia(prob, features_row, shap_values_row)
+        recomendacion = (
+            "A partir de las orientaciones disponibles para familias, podrían ser útiles acciones como: "
+            f"{joined_highlights}"
+        )
+    elif rol == "docente":
+        recomendacion = (
+            "Considerando las guías pedagógicas disponibles, se sugiere priorizar estrategias tales como: "
+            f"{joined_highlights}"
+        )
+    else:
+        recomendacion = (
+            "De acuerdo con las guías clínicas relacionadas, podrían priorizarse intervenciones como: "
+            f"{joined_highlights}"
+        )
 
-    if rol == "docente":
-        return _recommend_docente(prob, features_row, shap_values_row)
-
-    # Cualquier otro lo tratamos como profesional de la salud
-    return _recommend_terapeuta(prob, features_row, shap_values_row)
+    return {
+        "intro": base_intro,
+        "recomendacion": recomendacion,
+        "disclaimer": base_disclaimer,
+    }
