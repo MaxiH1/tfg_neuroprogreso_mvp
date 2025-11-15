@@ -177,7 +177,7 @@ def classify_risk(prob: float):
     - texto adicional
     """
 
-    if prob < 0.33:
+    if prob < 0.20:
         nivel = "low"
         etiqueta = "Tu hijo/a está transitando un buen momento"
         texto = (
@@ -190,7 +190,7 @@ def classify_risk(prob: float):
             "y estar atento/a a cualquier cambio en el sueño, el ánimo o la concentración."
         )
 
-    elif prob < 0.66:
+    elif prob < 0.65:
         nivel = "medium"
         etiqueta = "Tu hijo/a podría necesitar un poco más de apoyo"
         texto = (

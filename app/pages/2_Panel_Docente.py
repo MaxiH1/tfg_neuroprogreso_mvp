@@ -94,11 +94,11 @@ def student_options(df):
 # Clasificación de riesgo pedagógico
 # ===============================
 def classify_risk(prob):
-    if prob < 0.33:
+    if prob < 0.20:
         return ("low", "📘", "Riesgo bajo",
             "El estudiante mantiene una trayectoria acorde.",
             "Continuar reforzando hábitos y consignas claras.")
-    elif prob < 0.66:
+    elif prob < 0.60:
         return ("medium", "⚠️", "Riesgo moderado",
             "Puede beneficiarse de apoyos adicionales.",
             "Ajustar duración de tareas y monitorear conductas.")
