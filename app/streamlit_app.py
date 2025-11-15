@@ -103,59 +103,27 @@ st.markdown("---")
 # -------------------------------------------------------------------
 # Cards de selección de rol
 # -------------------------------------------------------------------
-col_fam, col_doc, col_prof = st.columns(3)
+col1, col2, col3 = st.columns(3)
 
-with col_fam:
-    st.markdown(
-        """
-        <div class="role-card" style="background-color:#eff6ff;">
-            <div class="role-badge-familia">👨‍👩‍👧 Familia</div>
-            <div class="role-title">Familia</div>
-            <div class="role-subtitle">
-                Visualizá el progreso general del niño o niña y recibí sugerencias cotidianas
-                para acompañarlo en casa.
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
+with col1:
     st.page_link(
-        "pages/1_Panel_Familia.py",
+        "app/pages/1_Panel_Familia.py",
         label="Ver panel de Familia",
         icon="👨‍👩‍👧",
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
-with col_doc:
-    st.markdown(
-        """
-        <div class="role-card" style="background-color:#fffbeb;">
-            <div class="role-badge-docente">🏫 Docente</div>
-            <div class="role-title">Docente</div>
-            <div class="role-subtitle">
-                Explorá indicadores escolares, riesgo pedagógico y sugerencias prácticas para el aula.
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
+with col2:
     st.page_link(
-        "pages/2_Panel_Docente.py",
+        "app/pages/2_Panel_Docente.py",
         label="Ver panel de Docente",
-        icon="🏫",
+        icon="📘",
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
-with col_prof:
-    st.markdown(
-        """
-        <div class="role-card" style="background-color:#ecfdf3;">
-            <div class="role-badge-profesional">⚕️ Profesional</div>
-            <div class="role-title">Profesional</div>
-            <div class="role-subtitle">
-                Observá el perfil clínico global, indicadores clave y una recomendación orientativa
-                para la intervención.
-            </div>
-        """,
-        unsafe_allow_html=True,
+with col3:
+    st.page_link(
+        "app/pages/3_Panel_Profesional.py",
+        label="Ver panel de Profesional",
+        icon="🩺",
     )
     st.page_link(
         "pages/3_Panel_Profesional.py",
