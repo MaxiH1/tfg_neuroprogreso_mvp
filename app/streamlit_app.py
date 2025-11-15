@@ -1,4 +1,4 @@
-# app/streamlit_app.py
+# streamlit_app.py  (ahora en la raíz del repo)
 
 import streamlit as st
 
@@ -102,8 +102,7 @@ st.markdown("---")
 
 # -------------------------------------------------------------------
 # Cards de selección de rol
-# ⚠️ IMPORTANTE: las rutas de page_link son SOLO el nombre del archivo
-#     que está dentro de app/pages/
+#  ➜ Ahora las páginas están en /pages
 # -------------------------------------------------------------------
 col1, col2, col3 = st.columns(3)
 
@@ -121,7 +120,7 @@ with col1:
         unsafe_allow_html=True,
     )
     st.page_link(
-        "1_Panel_Familia.py",      # ✅ solo nombre de archivo
+        "pages/1_Panel_Familia.py",   # 🔹 ruta relativa a la raíz
         label="Ver panel de Familia",
         icon="👨‍👩‍👧",
     )
@@ -140,7 +139,7 @@ with col2:
         unsafe_allow_html=True,
     )
     st.page_link(
-        "2_Panel_Docente.py",      # ✅ placeholder, ya creado como archivo vacío
+        "pages/2_Panel_Docente.py",
         label="Ver panel de Docente",
         icon="📘",
     )
@@ -159,8 +158,7 @@ with col3:
         unsafe_allow_html=True,
     )
     st.page_link(
-        "3_Panel_Profesional.py",  # ✅ placeholder
+        "pages/3_Panel_Profesional.py",
         label="Ver panel de Profesional",
         icon="🩺",
     )
-
