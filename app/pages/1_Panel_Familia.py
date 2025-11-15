@@ -321,43 +321,6 @@ st.markdown(
 # -------------------------------------------------------------------
 # Bloque B – Indicadores del día a día (vista amigable)
 # -------------------------------------------------------------------
-st.markdown("### 2️⃣ Indicadores del día a día")
-
-st.markdown(
-    """
-    Estos indicadores no son un diagnóstico, sino una forma sencilla de mirar
-    cómo viene siendo el día a día de tu hijo/a en este momento.
-
-    Nos ayudan a observar, de un vistazo, aspectos como el **descanso**, la
-    **asistencia** y la **participación**, para detectar a tiempo si hace falta
-    ajustar algo en casa o en la escuela.
-    """
-)
-
-st.markdown(
-    """
-    - Si ves algo en **verde**, suele indicar que las cosas vienen bien en ese aspecto.  
-    - Si aparece en **amarillo**, puede ser una señal suave para prestar un poco más de atención.  
-    - Si se marca en **rojo**, no es para alarmarse, sino una invitación a conversar y acompañar más de cerca.
-    """
-)
-
-# 👇 aquí van tus métricas / gráficos simples (lo que ya tenías o vayas a agregar)
-# por ejemplo:
-# col1, col2, col3 = st.columns(3)
-# with col1:
-#     st.metric("Descanso promedio", "8 h", "estable")
-# with col2:
-#     st.metric("Asistencia al colegio", "92 %", "-3 % vs. período anterior")
-# with col3:
-#     st.metric("Participación en clase", "Buena", "ligera mejora")
-
-st.caption(
-    "Si sentís que lo que ves acá no coincide con lo que observás en casa, "
-    "tu mirada es la más importante. Podés usar esta información como punto "
-    "de partida para hablar con la escuela o con los profesionales que "
-    "acompañan a tu hijo/a."
-)
 
 # -------------------------------------------------------------------
 # 3. Recomendación personalizada usando tu motor de recomendaciones
