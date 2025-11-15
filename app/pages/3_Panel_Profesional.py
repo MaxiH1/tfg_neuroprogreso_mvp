@@ -1,4 +1,4 @@
-# pages/3_Panel_Profesional.py
+# app/pages/3_Panel_Profesional.py
 
 import streamlit as st
 import pandas as pd
@@ -118,7 +118,7 @@ st.markdown(
 )
 
 # -------------------------------------------------------------------
-# Carga de datos y modelo (misma lógica que en Familia / Docente)
+# Carga de datos y modelo
 # -------------------------------------------------------------------
 @st.cache_data
 def load_data():
@@ -152,9 +152,8 @@ def train_model_and_explainer(df: pd.DataFrame):
 df = load_data()
 model, explainer, feature_cols = train_model_and_explainer(df)
 
-
 # -------------------------------------------------------------------
-# Utilidades para alias de niño/niña y clasificación de riesgo
+# Utilidades
 # -------------------------------------------------------------------
 FICTICIOUS_NAMES = [
     "Luna", "Tomás", "Mía", "Mateo", "Emma", "Lucas",
@@ -175,7 +174,6 @@ def build_child_options(df: pd.DataFrame):
 
 
 def classify_global_risk(prob: float):
-    """Umbrales ajustados para no saturar en riesgo alto."""
     if prob < 0.30:
         nivel = "low"
         titulo = "Riesgo clínico bajo según el modelo"
@@ -239,7 +237,6 @@ FRIENDLY_FEATURE_NAMES = {
     "severity": "Índice global de severidad",
 }
 
-
 # -------------------------------------------------------------------
 # Layout principal
 # -------------------------------------------------------------------
@@ -250,7 +247,7 @@ st.caption(
     "y una recomendación orientativa para apoyar la toma de decisiones profesionales."
 )
 
-# --- Selector de caso -------------------------------------------------------
+# Selector de caso
 options = build_child_options(df)
 selected_label = st.selectbox("Seleccioná el caso a visualizar", list(options.keys()))
 selected_index = options[selected_label]
@@ -261,10 +258,6 @@ y_real = int(df.loc[selected_index, "y"])
 X_case = features_row.to_frame().T
 proba = float(model.predict_proba(X_case)[0, 1])
 pred = int(proba >= 0.5)
-
-# SHAP para factores influyentes
-shap_values_case = explainer.shap_values(X_case)[0]
-
 
 # -------------------------------------------------------------------
 # 1. Perfil de riesgo global
@@ -310,7 +303,6 @@ st.markdown(
 # -------------------------------------------------------------------
 st.markdown("### 2. Indicadores clínicos sintetizados")
 
-# Umbrales basados en cuantiles de la muestra
 q_aff_low, q_aff_high = df["affect_total"].quantile([0.33, 0.66])
 q_rrb_low, q_rrb_high = df["RRB"].quantile([0.33, 0.66])
 q_sev_low, q_sev_high = df["severity"].quantile([0.33, 0.66])
@@ -389,39 +381,64 @@ st.caption(
 )
 
 # -------------------------------------------------------------------
-# 3. Factores que más influyeron en la predicción (según el modelo)
+# 3. Factores más influyentes en la predicción (vista técnica)
 # -------------------------------------------------------------------
 st.markdown("### 3. Factores más influyentes en la predicción")
 
-# top 3 absolutas
-abs_shap = np.abs(shap_values_case[0])
-idx_sorted = np.argsort(-abs_shap)  # descendente
-top_idx = idx_sorted[:3]
-
-items = []
-for i in top_idx:
-    feat = feature_cols[i]
-    name = FRIENDLY_FEATURE_NAMES.get(feat, feat)
-    value = float(features_row[feat])
-    contrib = shap_values_case[0][i]
-    direction = "aumentó" if contrib > 0 else "disminuyó"
-    items.append(
-        f"- **{name}** (valor observado: `{value}`) {direction} la probabilidad estimada de requerir mayor apoyo."
-    )
-
-st.markdown(
-    """
-    El modelo identifica, para este caso, las siguientes variables como las de mayor
-    peso relativo en la predicción. La interpretación debe hacerse siempre en el marco
-    de la historia clínica y de la evaluación integral.
-    """
+st.caption(
+    "Esta sección resume qué variables aportan más a la predicción del modelo para este caso. "
+    "Su lectura está orientada a profesionales con formación clínica o en análisis de datos."
 )
 
-st.markdown("\n".join(items))
+# Calculamos SHAP para el caso actual
+raw_shap_values_case = explainer.shap_values(X_case)
+
+def get_1d_shap_vector(shap_vals, n_features: int):
+    arr = np.array(shap_vals)
+
+    if arr.ndim == 1 and arr.shape[0] == n_features:
+        return arr
+    if arr.ndim == 2 and arr.shape[1] == n_features:
+        return arr[0]
+    if arr.ndim == 2 and arr.shape[0] > 1:
+        return arr[0]
+    if arr.ndim == 3:
+        return arr.reshape(-1, n_features)[0]
+
+    return arr.reshape(-1)[:n_features]
+
+shap_vector = get_1d_shap_vector(raw_shap_values_case, len(feature_cols))
+
+feature_importance = []
+for feature_name, contrib in zip(feature_cols, shap_vector):
+    abs_contrib = float(abs(contrib))
+    feature_importance.append(
+        {
+            "variable": feature_name,
+            "contribucion": float(contrib),
+            "impacto_absoluto": abs_contrib,
+        }
+    )
+
+feature_importance = sorted(
+    feature_importance,
+    key=lambda x: x["impacto_absoluto"],
+    reverse=True,
+)[:5]
+
+st.write("Variables con mayor impacto (ordenadas por contribución absoluta):")
+st.table(
+    {
+        "Variable": [FRIENDLY_FEATURE_NAMES.get(f["variable"], f["variable"]) for f in feature_importance],
+        "Contribución SHAP": [round(f["contribucion"], 3) for f in feature_importance],
+        "Impacto absoluto": [round(f["impacto_absoluto"], 3) for f in feature_importance],
+    }
+)
 
 st.caption(
-    "Los valores SHAP describen contribuciones relativas del modelo, no equivalen a coeficientes clínicos "
-    "ni a significancia estadística en estudios poblacionales."
+    "Valores positivos indican que la variable empuja la predicción hacia un perfil de mayor necesidad "
+    "de apoyo; valores negativos, hacia menor necesidad. La magnitud absoluta refleja la relevancia relativa "
+    "en esta predicción puntual."
 )
 
 # -------------------------------------------------------------------
@@ -430,10 +447,10 @@ st.caption(
 st.markdown("### 4. Recomendación orientativa para la intervención")
 
 reco = get_recommendation(
-    rol="terapeuta",   # rol interno para profesionales de la salud
+    rol="terapeuta",
     prob=proba,
     features_row=features_row,
-    shap_values_row=shap_values_case,
+    shap_values_row=shap_vector,   # usamos el vector 1D
 )
 
 with st.container():
