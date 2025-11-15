@@ -102,32 +102,65 @@ st.markdown("---")
 
 # -------------------------------------------------------------------
 # Cards de selección de rol
+# ⚠️ IMPORTANTE: las rutas de page_link son SOLO el nombre del archivo
+#     que está dentro de app/pages/
 # -------------------------------------------------------------------
 col1, col2, col3 = st.columns(3)
 
 with col1:
+    st.markdown(
+        """
+        <div class="role-card">
+            <div class="role-badge-familia">👨‍👩‍👧 Familia</div>
+            <div class="role-title">Familia</div>
+            <div class="role-subtitle">
+                Visualizá el progreso general del niño y recibí sugerencias cotidianas para acompañarlo en casa.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.page_link(
-        "app/pages/1_Panel_Familia.py",
+        "1_Panel_Familia.py",      # ✅ solo nombre de archivo
         label="Ver panel de Familia",
         icon="👨‍👩‍👧",
     )
 
 with col2:
+    st.markdown(
+        """
+        <div class="role-card">
+            <div class="role-badge-docente">📘 Docente</div>
+            <div class="role-title">Docente</div>
+            <div class="role-subtitle">
+                Explorá indicadores escolares, riesgo pedagógico y sugerencias para el aula.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.page_link(
-        "app/pages/2_Panel_Docente.py",
+        "2_Panel_Docente.py",      # ✅ placeholder, ya creado como archivo vacío
         label="Ver panel de Docente",
         icon="📘",
     )
 
 with col3:
+    st.markdown(
+        """
+        <div class="role-card">
+            <div class="role-badge-profesional">🩺 Profesional</div>
+            <div class="role-title">Profesional</div>
+            <div class="role-subtitle">
+                Observá el perfil clínico global y una recomendación orientativa para la intervención.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.page_link(
-        "app/pages/3_Panel_Profesional.py",
+        "3_Panel_Profesional.py",  # ✅ placeholder
         label="Ver panel de Profesional",
         icon="🩺",
     )
-    st.page_link(
-        "pages/3_Panel_Profesional.py",
-        label="Ver panel de Profesional",
-        icon="⚕️",
-    )
-    st.markdown("</div>", unsafe_allow_html=True)
+
