@@ -18,7 +18,7 @@ KB_DIR = BASE_DIR / "knowledge_base"
 
 # rol interno -> subcarpeta dentro de knowledge_base
 ROLE_DIRS = {
-    "familia": "familia",
+    "familia": "family_guidelines",
     "docente": "docente",        # los usaremos más adelante
     "terapeuta": "profesional",  # idem
 }
