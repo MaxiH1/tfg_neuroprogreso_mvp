@@ -15,13 +15,16 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Configuración de la base de conocimiento
 # -------------------------------------------------------------------
 
-BASE_KB_DIR = Path("knowledge_base")
+# Carpeta raíz del proyecto (…/tfg_neuroprogreso_mvp)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Carpeta base donde viven los .md de conocimiento
+BASE_KB_DIR = PROJECT_ROOT / "knowledge_base"
 
 # Ojo con los nombres de carpeta que tenés en el proyecto
 ROLE_DIRS: Dict[str, str] = {
     "familia": "family_guidelines",
     "docente": "educational_guidelines",
-    "terapeuta": "clinical_guidelines",
+    "terapeuta": "clinical_guidelines",  # <- PROFESIONAL / TERAPEUTA
 }
 
 
@@ -145,7 +148,7 @@ def extract_highlights(text: str, max_sentences: int = 3) -> str:
     if not lines:
         return ""
 
-    # Tomamos las primeras 3 líneas/frases informativas
+    # Tomamos las primeras líneas/frases informativas
     highlights = lines[:max_sentences]
     return " ".join(highlights)
 
@@ -194,9 +197,7 @@ def _fallback_for_familia(prob: float) -> Dict[str, str]:
 
 def _fallback_for_docente(prob: float) -> Dict[str, str]:
     if prob < 0.33:
-        intro = (
-            "El modelo sugiere un riesgo pedagógico bajo en este momento."
-        )
+        intro = "El modelo sugiere un riesgo pedagógico bajo en este momento."
         recomendacion = (
             "Puede ser útil sostener las estrategias que ya funcionan en el aula, ofrecer consignas "
             "claras y breves, y reforzar los logros para consolidar la participación del estudiante."
@@ -211,9 +212,7 @@ def _fallback_for_docente(prob: float) -> Dict[str, str]:
             "compartirlas con la familia y el equipo de apoyo."
         )
     else:
-        intro = (
-            "El modelo señala un riesgo pedagógico alto en este período."
-        )
+        intro = "El modelo señala un riesgo pedagógico alto en este período."
         recomendacion = (
             "Conviene revisar en equipo los apoyos disponibles en el aula, definir adaptaciones "
             "prioritarias (tiempos, consignas, apoyos visuales, espacios de regulación) y coordinar "
